@@ -2,7 +2,6 @@ import sys
 import string
 from os import listdir
 from os.path import isfile, join
-import pymorphy2
 import codecs
 import pickle
 from collections import defaultdict
@@ -19,7 +18,7 @@ ind_path = sys.argv[2]
 only_files = [f for f in listdir(doc_path) if isfile(join(doc_path,f))]
 morph = pymorphy2.MorphAnalyzer()
 index_dict = defaultdict(set)
-index_dict['!files'] = only_files
+index_dict['!files'].union(only_files)
 for i in range(len(only_files)):
     print(only_files[i])
     f = codecs.open(doc_path + '/' + only_files[i], encoding='utf-8', mode='r')
