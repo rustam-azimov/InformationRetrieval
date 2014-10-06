@@ -1,17 +1,24 @@
 import sys
-import codecs
 import pymorphy2
+import pickle
 
+def union(*sets):
+    prev_set = set()
+    for s in sets:
+        prev_set = set(s).union(prev_set)
+    return prev_set
+
+def intersection(first, *sets):
+    prev_set = first
+    for s in sets:
+        prev_set = s.intersection(prev_set)
+    return prev_set
+
+morph = pymorphy2.MorphAnalyzer()
 ind_path = sys.argv[1]
-f = codecs.open(ind_path, encoding='utf-8', mode='r')
-docs = f.readline().split()
-words = []
-indexes = []
-for line in f:
-    list = line.split()
-    words.append(list[0])
-    indexes.append(list[1::])
-
+f = open(ind_path, 'rb')
+index_dict = pickle.load(f)
+docs = index_dict['!files']
 query = input('Enter your query or "exit": ')
 while not (query == 'exit'):
     query = query.split()
@@ -19,46 +26,33 @@ while not (query == 'exit'):
         print('incorrect query')
         query = input('Enter your query or "exit": ')
         continue
-    n = (len(query) + 1) // 2
     opers = query[1::2]
-    isAnds = False
+    searches = set()
+    for w in query[::2]:
+        for p in morph.parse(w):
+            for l in p.lexeme:
+                searches.add(l.word)
+    res = set()
     if set(opers) == {'AND'}:
-        isAnds = True
-    elif set(opers) != {'OR'} and n > 1:
+        res = intersection(*[index_dict[search] for search in searches])
+    elif set(opers) != {'OR'} and (len(query) + 1) // 2 > 1:
         print('incorrect query')
         query = input('Enter your query or "exit": ')
         continue
-    lines = []
-    searches = query[::2]
-    for search in searches:
-        if search in words:
-            i = words.index(search)
-            lines.append(i)
-    s = set()
-    if isAnds:
-        if len(lines) != n:
-            print('no documents found')
-            query = input('Enter your query or "exit": ')
-            continue
-        s = set(indexes[lines[0]])
-        for i in range(1, n):
-            s = s.intersection(set(indexes[lines[i]]))
     else:
-        for i in range(len(lines)):
-            s = s.union(set(indexes[lines[i]]))
-    res = []
-    for e in s:
-        res.append(e)
-    if not len(res):
+        res = union(*[index_dict[search] for search in searches])
+    list_res = list(res)
+    n = len(list_res)
+    if not n:
         print('no documents found')
         query = input('Enter your query or "exit": ')
         continue
     print('found ')
-    if len(res) == 1:
-        print(docs[int(res[0])])
+    if n == 1:
+        print(docs[list_res[0]])
         query = input('Enter your query or "exit": ')
         continue
-    print(docs[int(res[0])] + ', ' + docs[int(res[1])])
-    if len(res) > 2:
-        print('and ' + str(len(res) - 2) + ' more')   
+    print(docs[list_res[0]] + ', ' + docs[list_res[1]])
+    if n > 2:
+        print('and ' + str(n - 2) + ' more')   
     query = input('Enter your query or "exit": ')

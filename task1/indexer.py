@@ -4,27 +4,30 @@ from os import listdir
 from os.path import isfile, join
 import pymorphy2
 import codecs
+import pickle
+from collections import defaultdict
+
+exclude = set(string.punctuation)
+
+def parser(ch):
+    if (ch in exclude):
+        return ' '
+    return ch
 
 doc_path = sys.argv[1]
 ind_path = sys.argv[2]
 only_files = [f for f in listdir(doc_path) if isfile(join(doc_path,f))]
 morph = pymorphy2.MorphAnalyzer()
-intab = string.punctuation
-outtab = ' ' * len(string.punctuation)
-index_dict = dict()
+index_dict = defaultdict(set)
+index_dict['!files'] = only_files
 for i in range(len(only_files)):
+    print(only_files[i])
     f = codecs.open(doc_path + '/' + only_files[i], encoding='utf-8', mode='r')
-    words = f.read().translate({ord(x): y for (x, y) in zip(intab, outtab)}).lower().split()
+    words = set(''.join(parser(ch) for ch in f.read()).lower().split())
     for word in words:
-        normal = morph.parse(word)[0].normal_form
-        value = index_dict.get(normal, [])
-        if str(i) not in value:
-            index_dict[normal] = value + [str(i)]
-    f.close()   
+        index_dict[word].add(i)
+    f.close()
 
-index_inv = codecs.open(ind_path, 'w', 'utf-8')
-index_inv.write(" ".join(only_files))  
-for word in index_dict.keys():
-    values = " ".join(index_dict[word])
-    index_inv.write('\n' + word + " " + values)
+index_inv = open(ind_path, 'wb')
+pickle.dump(index_dict, index_inv)
 index_inv.close()
