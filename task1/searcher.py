@@ -1,6 +1,7 @@
 import sys
 import pymorphy2
 import pickle
+from collections import defaultdict
 
 def union(*sets):
     prev_set = set()
@@ -18,7 +19,10 @@ morph = pymorphy2.MorphAnalyzer()
 ind_path = sys.argv[1]
 f = open(ind_path, 'rb')
 index_dict = pickle.load(f)
-docs = index_dict['!files']
+docs_set = index_dict['!files']
+docs = []
+for strs in docs_set:
+    docs = strs.split()
 query = input('Enter your query or "exit": ')
 while not (query == 'exit'):
     query = query.split()
@@ -27,11 +31,11 @@ while not (query == 'exit'):
         query = input('Enter your query or "exit": ')
         continue
     opers = query[1::2]
-    searches = set()
+    searches = defaultdict(set)
     for w in query[::2]:
         for p in morph.parse(w):
             for l in p.lexeme:
-                searches.add(l.word)
+                searches[w] = searches[w].union(index_dict[l.word])
     res = set()
     if set(opers) == {'AND'}:
         res = intersection(*[index_dict[search] for search in searches])
@@ -43,7 +47,7 @@ while not (query == 'exit'):
         res = union(*[index_dict[search] for search in searches])
     list_res = list(res)
     n = len(list_res)
-    if not n:
+    if n == 0:
         print('no documents found')
         query = input('Enter your query or "exit": ')
         continue

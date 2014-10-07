@@ -16,17 +16,17 @@ def parser(ch):
 doc_path = sys.argv[1]
 ind_path = sys.argv[2]
 only_files = [f for f in listdir(doc_path) if isfile(join(doc_path,f))]
-morph = pymorphy2.MorphAnalyzer()
 index_dict = defaultdict(set)
-index_dict['!files'].union(only_files)
+docs = ''
 for i in range(len(only_files)):
-    print(only_files[i])
+    print('indexing... ' + only_files[i])
+    docs = docs + ' ' + only_files[i]
     f = codecs.open(doc_path + '/' + only_files[i], encoding='utf-8', mode='r')
     words = set(''.join(parser(ch) for ch in f.read()).lower().split())
     for word in words:
         index_dict[word].add(i)
     f.close()
-
+index_dict['!files'].add(docs)
 index_inv = open(ind_path, 'wb')
 pickle.dump(index_dict, index_inv)
 index_inv.close()
