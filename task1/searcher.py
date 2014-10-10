@@ -38,13 +38,13 @@ while not (query == 'exit'):
                 searches[w] = searches[w].union(index_dict[l.word])
     res = set()
     if set(opers) == {'AND'}:
-        res = intersection(*[index_dict[search] for search in searches])
+        res = intersection(*[searches[key] for key in searches])
     elif set(opers) != {'OR'} and (len(query) + 1) // 2 > 1:
         print('incorrect query')
         query = input('Enter your query or "exit": ')
         continue
     else:
-        res = union(*[index_dict[search] for search in searches])
+        res = union(*[searches[key] for key in searches])
     list_res = list(res)
     n = len(list_res)
     if n == 0:

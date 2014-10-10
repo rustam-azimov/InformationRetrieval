@@ -22,7 +22,7 @@ for i in range(len(only_files)):
     print('indexing... ' + only_files[i])
     docs = docs + ' ' + only_files[i]
     f = codecs.open(doc_path + '/' + only_files[i], encoding='utf-8', mode='r')
-    words = set(''.join(parser(ch) for ch in f.read()).lower().split())
+    words = set(''.join(parser(ch) for ch in f.read()).replace(u'\ufeff', '').lower().split())
     for word in words:
         index_dict[word].add(i)
     f.close()
